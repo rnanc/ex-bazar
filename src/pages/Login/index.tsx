@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import { Alert, View, StyleSheet, Text, TextInput, Button, TouchableOpacity } from 'react-native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from "../../services/api";
+import {getDatabase, ref, set } from 'firebase/database';
 import { useNavigation } from '@react-navigation/native';
 
 export function Login(params:any) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [nome, setNome] = useState('');
+  const [phone, setPhone] = useState('');
   const { navigate } = useNavigation();
 
   const returnError = (erro: string) => {
@@ -40,6 +43,15 @@ export function Login(params:any) {
  async function createUser() {
    await createUserWithEmailAndPassword(auth, email, senha)
    .then((response)=>{
+    const db = getDatabase();
+    const reference = ref(db, 'users/' + response.user.uid);
+    reference.key
+    set(reference, {
+      nome,
+      phone,
+      uid: response.user.uid
+    });
+    console.log(response)
     Alert.alert(`User: ${JSON.stringify(response.user)}`);
    })
    .catch((erro)=>{
@@ -50,8 +62,8 @@ export function Login(params:any) {
  async function loginUser() {
   await signInWithEmailAndPassword(auth, email, senha)
   .then((response)=>{
-    navigate('Home')
-  //  Alert.alert(`Usuario logado: ${JSON.stringify(response.user.email)}`);
+    navigate('Home', {id: response.user.uid})
+  //  Alert.alert(`Usuario logado: ${JSON.stringify(response.user)}`);
   })
   .catch((erro)=>{
     Alert.alert(returnError(erro.message));
@@ -75,6 +87,18 @@ export function Login(params:any) {
         secureTextEntry={true}
         value={senha}
         onChangeText={text => {setSenha(text)}}
+      />
+       <TextInput 
+        style={styles.input}
+        placeholder="nome"
+        value={nome}
+        onChangeText={text => {setNome(text)}}
+      /> 
+      <TextInput 
+        style={styles.input}
+        placeholder="phone"
+        value={phone}
+        onChangeText={text => {setPhone(text)}}
       />
       <TouchableOpacity 
         style={styles.button}
